@@ -5,11 +5,17 @@ import { useTetris } from "@/hooks/useTetris";
 
 export const TetrisGame = () => {
   const { gameState, startGame, togglePause } = useTetris();
+  const pieceSize = gameState.currentPiece
+    ? gameState.currentPiece.shape.reduce(
+        (acc, row) => acc + row.reduce((s, cell) => s + (cell ? 1 : 0), 0),
+        0
+      )
+    : undefined;
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
       <h1 className="text-4xl font-bold mb-8 text-foreground">Tetris</h1>
-      
+
       <div className="flex flex-col lg:flex-row gap-8 items-start">
         <div className="flex flex-col items-center gap-4">
           <Board
@@ -17,7 +23,7 @@ export const TetrisGame = () => {
             currentPiece={gameState.currentPiece}
             position={gameState.position}
           />
-          
+
           <div className="flex gap-2">
             {!gameState.currentPiece || gameState.gameOver ? (
               <Button onClick={startGame} size="lg">
@@ -31,7 +37,9 @@ export const TetrisGame = () => {
           </div>
 
           {gameState.gameOver && (
-            <div className="text-2xl font-bold text-destructive">Game Over!</div>
+            <div className="text-2xl font-bold text-destructive">
+              Game Over!
+            </div>
           )}
 
           {gameState.isPaused && !gameState.gameOver && (
@@ -43,6 +51,7 @@ export const TetrisGame = () => {
           score={gameState.score}
           level={gameState.level}
           lines={gameState.lines}
+          pieceSize={pieceSize}
         />
       </div>
     </div>

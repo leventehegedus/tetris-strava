@@ -2,9 +2,15 @@ interface ScoreBoardProps {
   score: number;
   level: number;
   lines: number;
+  pieceSize?: number;
 }
 
-export const ScoreBoard = ({ score, level, lines }: ScoreBoardProps) => {
+export const ScoreBoard = ({
+  score,
+  level,
+  lines,
+  pieceSize,
+}: ScoreBoardProps) => {
   return (
     <div className="bg-card border border-border rounded-lg p-4 space-y-4">
       <h2 className="text-xl font-bold text-center text-foreground">Stats</h2>
@@ -20,6 +26,12 @@ export const ScoreBoard = ({ score, level, lines }: ScoreBoardProps) => {
         <div className="flex justify-between items-center">
           <span className="text-muted-foreground">Lines:</span>
           <span className="text-xl font-bold text-foreground">{lines}</span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-muted-foreground">Piece Size:</span>
+          <span className="text-xl font-bold text-foreground">
+            {pieceSize ?? "-"}
+          </span>
         </div>
       </div>
       <div className="text-xs text-muted-foreground border-t border-border pt-4">
