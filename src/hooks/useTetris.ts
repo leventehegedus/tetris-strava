@@ -167,6 +167,8 @@ export const useTetris = () => {
     if (gameState.gameOver || gameState.isPaused || !gameState.currentPiece) return;
 
     const interval = setInterval(() => {
+      let shouldLock = false;
+
       setGameState(prev => {
         if (!prev.currentPiece || prev.gameOver || prev.isPaused) return prev;
 
@@ -175,10 +177,14 @@ export const useTetris = () => {
         if (isValidMove(prev.board, prev.currentPiece, newPosition)) {
           return { ...prev, position: newPosition };
         } else {
-          lockPiece();
+          shouldLock = true;
           return prev;
         }
       });
+
+      if (shouldLock) {
+        lockPiece();
+      }
     }, dropTimeRef.current);
 
     return () => clearInterval(interval);
