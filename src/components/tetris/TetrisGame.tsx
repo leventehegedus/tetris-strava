@@ -6,7 +6,7 @@ import { useStrava } from "@/hooks/useStrava";
 
 export const TetrisGame = () => {
   const { gameState, currentRun, startGame, togglePause } = useTetris();
-  const { loading: stravaLoading } = useStrava();
+  const { loading: stravaLoading, activities } = useStrava();
   const pieceSize = gameState.currentPiece
     ? gameState.currentPiece.shape.reduce(
         (acc, row) => acc + row.reduce((s, cell) => s + (cell ? 1 : 0), 0),
@@ -28,7 +28,11 @@ export const TetrisGame = () => {
 
           <div className="flex gap-2">
             {!gameState.currentPiece || gameState.gameOver ? (
-              <Button onClick={startGame} size="lg" disabled={stravaLoading}>
+              <Button
+                onClick={startGame}
+                size="lg"
+                disabled={stravaLoading || activities.length === 0}
+              >
                 {gameState.gameOver ? "New Game" : "Start Game"}
               </Button>
             ) : (

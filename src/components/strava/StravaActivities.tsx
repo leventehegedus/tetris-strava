@@ -4,11 +4,16 @@ import { useStrava } from "@/hooks/useStrava";
 import type { StravaActivity } from "@/types/strava";
 
 export const StravaActivities = () => {
-  const { isAuthenticated, activities, loading, error, fetchActivities } = useStrava();
+  const { isAuthenticated, activities, loading, error, fetchActivities } =
+    useStrava();
   const [hasLoaded, setHasLoaded] = useState(false);
 
   useEffect(() => {
-    if (isAuthenticated && !hasLoaded) {
+    if (!isAuthenticated) {
+      setHasLoaded(false);
+      return;
+    }
+    if (!hasLoaded) {
       fetchActivities();
       setHasLoaded(true);
     }
@@ -71,12 +76,19 @@ export const StravaActivities = () => {
   return (
     <div className="bg-card border border-border rounded-lg p-4">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold text-foreground">Recent Activities</h3>
-        <Button onClick={() => fetchActivities()} variant="outline" size="sm" disabled={loading}>
+        <h3 className="text-lg font-semibold text-foreground">
+          Recent Activities
+        </h3>
+        <Button
+          onClick={() => fetchActivities()}
+          variant="outline"
+          size="sm"
+          disabled={loading}
+        >
           {loading ? "Loading..." : "Refresh"}
         </Button>
       </div>
-      
+
       <div className="space-y-2 max-h-96 overflow-y-auto">
         {activities.map((activity: StravaActivity) => (
           <div
@@ -86,7 +98,9 @@ export const StravaActivities = () => {
             <div className="flex justify-between items-start">
               <div className="flex-1">
                 <h4 className="font-medium text-foreground">{activity.name}</h4>
-                <p className="text-sm text-muted-foreground">{activity.sport_type}</p>
+                <p className="text-sm text-muted-foreground">
+                  {activity.sport_type}
+                </p>
               </div>
               <span className="text-xs text-muted-foreground">
                 {formatDate(activity.start_date_local)}
