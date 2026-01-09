@@ -3,15 +3,18 @@ import { TetrisGame } from "@/components/tetris/TetrisGame";
 import { StravaConnect } from "@/components/strava/StravaConnect";
 import { StravaActivities } from "@/components/strava/StravaActivities";
 import { StravaCallback } from "@/pages/StravaCallback";
+import { StravaProvider } from "@/hooks/useStrava";
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/strava/callback" element={<StravaCallback />} />
-        <Route path="/" element={<HomePage />} />
-      </Routes>
-    </Router>
+    <StravaProvider>
+      <Router>
+        <Routes>
+          <Route path="/strava/callback" element={<StravaCallback />} />
+          <Route path="/" element={<HomePage />} />
+        </Routes>
+      </Router>
+    </StravaProvider>
   );
 }
 
@@ -24,7 +27,7 @@ function HomePage() {
             <div className="flex-1">
               <TetrisGame />
             </div>
-            
+
             <div className="lg:w-80 space-y-4">
               <StravaConnect />
               <StravaActivities />

@@ -1,9 +1,29 @@
-import { useState, useEffect } from "react";
+import {
+  useState,
+  useEffect,
+  createContext,
+  useContext,
+  createElement,
+} from "react";
+import type { ReactNode } from "react";
 import type { StravaTokens, StravaActivity } from "@/types/strava";
 
 const STRAVA_API_BASE = "https://www.strava.com/api/v3";
+type StravaContextValue = {
+  tokens: StravaTokens | null;
+  activities: StravaActivity[];
+  loading: boolean;
+  error: string | null;
+  initiateAuth: (clientId: string, redirectUri: string) => void;
+  exchangeToken: (code: string) => Promise<StravaTokens | undefined>;
+  fetchActivities: (perPage?: number) => Promise<StravaActivity[] | undefined>;
+  clearTokens: () => void;
+  isAuthenticated: boolean;
+};
 
-export const useStrava = () => {
+const StravaContext = createContext<StravaContextValue | undefined>(undefined);
+
+export const StravaProvider = ({ children }: { children: ReactNode }) => {
   const [tokens, setTokens] = useState<StravaTokens | null>(null);
   const [activities, setActivities] = useState<StravaActivity[]>([]);
   const [loading, setLoading] = useState(false);
@@ -116,7 +136,6 @@ export const useStrava = () => {
         page++;
       }
 
-      // Optionally useful if needed elsewhere
       const firstEverActivity =
         lastPageData[lastPageData.length - 1] ?? undefined;
       console.log("Fetched activities count:", allActivities.length);
@@ -124,7 +143,6 @@ export const useStrava = () => {
         console.log("First ever activity:", firstEverActivity.id);
       }
 
-      // Persist to localStorage for later use
       localStorage.setItem("strava_activities", JSON.stringify(allActivities));
 
       setActivities(allActivities);
@@ -137,7 +155,7 @@ export const useStrava = () => {
     }
   };
 
-  return {
+  const value: StravaContextValue = {
     tokens,
     activities,
     loading,
@@ -148,4 +166,14 @@ export const useStrava = () => {
     clearTokens,
     isAuthenticated: !!tokens,
   };
+
+  return createElement(StravaContext.Provider, { value }, children);
+};
+
+export const useStrava = () => {
+  const ctx = useContext(StravaContext);
+  if (!ctx) {
+    throw new Error("useStrava must be used within a StravaProvider");
+  }
+  return ctx;
 };
