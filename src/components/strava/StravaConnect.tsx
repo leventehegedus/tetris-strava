@@ -1,15 +1,24 @@
 import { Button } from "@/components/ui/button";
 import { useStrava } from "@/hooks/useStrava";
 
-const CLIENT_ID = 194362;
-const CLIENT_SECRET = "e8768e5499efb8ef5fb9229ca190cb30fb6b7f3f";
+const CLIENT_ID = import.meta.env.VITE_STRAVA_CLIENT_ID as string | undefined;
+const CLIENT_SECRET = import.meta.env.VITE_STRAVA_CLIENT_SECRET as
+  | string
+  | undefined;
 
 export const StravaConnect = () => {
   const { isAuthenticated, initiateAuth, clearTokens } = useStrava();
 
   const handleConnect = () => {
+    if (!CLIENT_ID || !CLIENT_SECRET) {
+      alert(
+        "Missing Strava credentials. Set VITE_STRAVA_CLIENT_ID and VITE_STRAVA_CLIENT_SECRET."
+      );
+      return;
+    }
+
     const clientId = CLIENT_ID.toString();
-    const clientSecret = CLIENT_SECRET;
+    const clientSecret = CLIENT_SECRET.toString();
 
     // Store credentials temporarily for the callback
     localStorage.setItem("strava_client_id", clientId);

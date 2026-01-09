@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import type { GameState, Position } from "@/types/tetris";
 import type { StravaActivity } from "@/types/strava";
 import {
@@ -19,10 +19,32 @@ const DROP_TIME_DECREASE = 50;
 
 export const useTetris = () => {
   const { activities } = useStrava();
-  const [sequence, setSequence] = useState<number[]>([]);
-  const [activitySequence, setActivitySequence] = useState<StravaActivity[]>(
-    []
-  );
+  const sequence = useMemo<number[]>(() => {
+    if (!activities || activities.length === 0) return [];
+    const runTypes = new Set(["Run", "TrailRun", "VirtualRun"]);
+    const runsSorted = activities
+      .filter((a) => runTypes.has(a.sport_type))
+      .sort(
+        (a, b) =>
+          new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
+      );
+    return runsSorted.map((a) => {
+      const km = a.distance / 1000;
+      const size = Math.max(1, Math.floor(km));
+      return Math.min(42, size);
+    });
+  }, [activities]);
+
+  const activitySequence = useMemo<StravaActivity[]>(() => {
+    if (!activities || activities.length === 0) return [];
+    const runTypes = new Set(["Run", "TrailRun", "VirtualRun"]);
+    return activities
+      .filter((a) => runTypes.has(a.sport_type))
+      .sort(
+        (a, b) =>
+          new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
+      );
+  }, [activities]);
   const [currentRun, setCurrentRun] = useState<StravaActivity | null>(null);
   const seqIndexRef = useRef(0);
 
@@ -39,32 +61,8 @@ export const useTetris = () => {
 
   const dropTimeRef = useRef(INITIAL_DROP_TIME);
 
-  // Build size sequence from Strava run activities (oldest first)
+  // Reset sequence index and current run when activities change
   useEffect(() => {
-    if (!activities || activities.length === 0) {
-      setSequence([]);
-      setActivitySequence([]);
-      setCurrentRun(null);
-      seqIndexRef.current = 0;
-      return;
-    }
-
-    const runTypes = new Set(["Run", "TrailRun", "VirtualRun"]);
-    const runsSorted = activities
-      .filter((a) => runTypes.has(a.sport_type))
-      .sort(
-        (a, b) =>
-          new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
-      );
-
-    const sizes = runsSorted.map((a) => {
-      const km = a.distance / 1000;
-      const size = Math.max(1, Math.floor(km));
-      return Math.min(42, size);
-    });
-
-    setSequence(sizes);
-    setActivitySequence(runsSorted);
     seqIndexRef.current = 0;
   }, [activities]);
 
@@ -208,7 +206,7 @@ export const useTetris = () => {
     setGameState((prev) => {
       if (!prev.currentPiece || prev.gameOver || prev.isPaused) return prev;
 
-      let newPosition = { ...prev.position };
+      const newPosition = { ...prev.position };
       while (
         isValidMove(prev.board, prev.currentPiece, {
           ...newPosition,

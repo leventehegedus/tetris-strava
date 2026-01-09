@@ -1,9 +1,18 @@
 import { useEffect, useState } from "react";
 import { useStrava } from "@/hooks/useStrava";
 
+const ENV_CLIENT_ID = import.meta.env.VITE_STRAVA_CLIENT_ID as
+  | string
+  | undefined;
+const ENV_CLIENT_SECRET = import.meta.env.VITE_STRAVA_CLIENT_SECRET as
+  | string
+  | undefined;
+
 export const StravaCallback = () => {
   const { exchangeToken } = useStrava();
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "success" | "error">(
+    "loading"
+  );
   const [message, setMessage] = useState("Processing Strava authentication...");
 
   useEffect(() => {
@@ -24,15 +33,19 @@ export const StravaCallback = () => {
         return;
       }
 
-      const clientId = localStorage.getItem("strava_client_id");
-      const clientSecret = localStorage.getItem("strava_client_secret");
+      // Prefer localStorage from the Connect button, fallback to env vars
+      const clientId =
+        localStorage.getItem("strava_client_id") ?? ENV_CLIENT_ID ?? undefined;
+      const clientSecret =
+        localStorage.getItem("strava_client_secret") ??
+        ENV_CLIENT_SECRET ??
+        undefined;
 
       if (!clientId || !clientSecret) {
         setStatus("error");
-        setMessage("Client credentials not found. Please try again.");
-        setTimeout(() => {
-          window.location.href = "/";
-        }, 3000);
+        setMessage(
+          "Missing Strava credentials. Ensure VITE_STRAVA_CLIENT_ID and VITE_STRAVA_CLIENT_SECRET are set, or reconnect from the home page."
+        );
         return;
       }
 
@@ -45,7 +58,14 @@ export const StravaCallback = () => {
         }, 2000);
       } catch (err) {
         setStatus("error");
-        setMessage("Failed to authenticate with Strava. Please try again.");
+        const params = new URLSearchParams(window.location.search);
+        const errHint =
+          params.get("error_description") ||
+          params.get("error") ||
+          "Unknown error";
+        setMessage(
+          `Failed to authenticate with Strava. ${errHint}. Check that your Authorization Callback Domain matches ${window.location.origin}.`
+        );
       }
     };
 
@@ -61,20 +81,20 @@ export const StravaCallback = () => {
             <p className="text-foreground">{message}</p>
           </div>
         )}
-        
+
         {status === "success" && (
           <div className="space-y-4">
             <div className="text-green-500 text-5xl">✓</div>
             <p className="text-foreground">{message}</p>
           </div>
         )}
-        
+
         {status === "error" && (
           <div className="space-y-4">
             <div className="text-destructive text-5xl">✗</div>
             <p className="text-destructive">{message}</p>
             <button
-              onClick={() => window.location.href = "/"}
+              onClick={() => (window.location.href = "/")}
               className="text-primary hover:underline"
             >
               Return to home

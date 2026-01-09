@@ -2,8 +2,7 @@ import type { Board, Tetromino, Position } from "@/types/tetris";
 import {
   BOARD_WIDTH,
   BOARD_HEIGHT,
-  TETROMINOES,
-  TETROMINO_KEYS,
+  createTetrominoBySize,
 } from "@/constants/tetris";
 
 export const createEmptyBoard = (): Board => {
@@ -13,16 +12,12 @@ export const createEmptyBoard = (): Board => {
 };
 
 export const getRandomTetromino = (): Tetromino => {
-  const randomKey =
-    TETROMINO_KEYS[Math.floor(Math.random() * TETROMINO_KEYS.length)];
-  return TETROMINOES[randomKey];
+  const randomSize = Math.floor(Math.random() * 42) + 1; // 1..42
+  return createTetrominoBySize(randomSize);
 };
 
 export const getTetrominoBySize = (size: number): Tetromino => {
-  const n = Math.max(1, Math.min(42, Math.floor(size)));
-  const key = `P${n}`;
-  if (key in TETROMINOES) return TETROMINOES[key];
-  return getRandomTetromino();
+  return createTetrominoBySize(size);
 };
 
 export const isValidMove = (

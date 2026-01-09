@@ -39,7 +39,8 @@ export const useStrava = () => {
 
   const initiateAuth = (clientId: string, redirectUri: string) => {
     const scope = "activity:read_all";
-    const authUrl = `https://www.strava.com/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}`;
+    const encodedRedirect = encodeURIComponent(redirectUri);
+    const authUrl = `https://www.strava.com/oauth/authorize?client_id=${clientId}&redirect_uri=${encodedRedirect}&response_type=code&scope=${scope}`;
     window.location.href = authUrl;
   };
 
