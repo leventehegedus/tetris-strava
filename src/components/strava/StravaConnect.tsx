@@ -5,6 +5,9 @@ const CLIENT_ID = import.meta.env.VITE_STRAVA_CLIENT_ID as string | undefined;
 const CLIENT_SECRET = import.meta.env.VITE_STRAVA_CLIENT_SECRET as
   | string
   | undefined;
+const REDIRECT_URI = import.meta.env.VITE_STRAVA_REDIRECT_URI as
+  | string
+  | undefined;
 
 export const StravaConnect = () => {
   const { isAuthenticated, initiateAuth, clearTokens } = useStrava();
@@ -24,7 +27,8 @@ export const StravaConnect = () => {
     localStorage.setItem("strava_client_id", clientId);
     localStorage.setItem("strava_client_secret", clientSecret);
 
-    const redirectUri = `${window.location.origin}/strava/callback`;
+    const redirectUri =
+      REDIRECT_URI ?? `${window.location.origin}/strava/callback`;
     initiateAuth(clientId, redirectUri);
   };
 
