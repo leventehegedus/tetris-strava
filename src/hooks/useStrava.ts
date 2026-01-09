@@ -14,6 +14,15 @@ export const useStrava = () => {
     if (storedTokens) {
       setTokens(JSON.parse(storedTokens));
     }
+    const storedActivities = localStorage.getItem("strava_activities");
+    if (storedActivities) {
+      try {
+        const parsed: StravaActivity[] = JSON.parse(storedActivities);
+        setActivities(parsed);
+      } catch {
+        // ignore malformed stored activities
+      }
+    }
   }, []);
 
   const saveTokens = (newTokens: StravaTokens) => {
@@ -24,6 +33,7 @@ export const useStrava = () => {
   const clearTokens = () => {
     setTokens(null);
     localStorage.removeItem("strava_tokens");
+    localStorage.removeItem("strava_activities");
     setActivities([]);
   };
 
@@ -33,7 +43,11 @@ export const useStrava = () => {
     window.location.href = authUrl;
   };
 
-  const exchangeToken = async (code: string, clientId: string, clientSecret: string) => {
+  const exchangeToken = async (
+    code: string,
+    clientId: string,
+    clientSecret: string
+  ) => {
     setLoading(true);
     setError(null);
 
@@ -72,7 +86,7 @@ export const useStrava = () => {
     }
   };
 
-  const fetchActivities = async (perPage: number = 30) => {
+  const fetchActivities = async (perPage: number = 200) => {
     if (!tokens) {
       setError("Not authenticated");
       return;
@@ -82,22 +96,47 @@ export const useStrava = () => {
     setError(null);
 
     try {
-      const response = await fetch(
-        `${STRAVA_API_BASE}/athlete/activities?per_page=${perPage}`,
-        {
-          headers: {
-            Authorization: `Bearer ${tokens.access_token}`,
-          },
-        }
-      );
+      let page = 1;
+      let allActivities: StravaActivity[] = [];
+      let lastPageData: StravaActivity[] = [];
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch activities");
+      while (true) {
+        const response = await fetch(
+          `${STRAVA_API_BASE}/athlete/activities?per_page=${perPage}&page=${page}`,
+          {
+            headers: {
+              Authorization: `Bearer ${tokens.access_token}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch activities");
+        }
+
+        const data: StravaActivity[] = await response.json();
+        if (data.length === 0) {
+          break;
+        }
+
+        lastPageData = data;
+        allActivities = allActivities.concat(data);
+        page++;
       }
 
-      const data: StravaActivity[] = await response.json();
-      setActivities(data);
-      return data;
+      // Optionally useful if needed elsewhere
+      const firstEverActivity =
+        lastPageData[lastPageData.length - 1] ?? undefined;
+      console.log("Fetched activities count:", allActivities.length);
+      if (firstEverActivity) {
+        console.log("First ever activity:", firstEverActivity.id);
+      }
+
+      // Persist to localStorage for later use
+      localStorage.setItem("strava_activities", JSON.stringify(allActivities));
+
+      setActivities(allActivities);
+      return allActivities;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
       throw err;
