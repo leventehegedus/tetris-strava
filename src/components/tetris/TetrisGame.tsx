@@ -5,7 +5,17 @@ import { useTetris } from "@/hooks/useTetris";
 import { useStrava } from "@/hooks/useStrava";
 
 export const TetrisGame = () => {
-  const { gameState, currentRun, startGame, togglePause } = useTetris();
+  const {
+    gameState,
+    currentRun,
+    startGame,
+    togglePause,
+    moveLeft,
+    moveRight,
+    moveDown,
+    rotate,
+    hardDrop,
+  } = useTetris();
   const { loading: stravaLoading, activities } = useStrava();
   const pieceSize = gameState.currentPiece
     ? gameState.currentPiece.shape.reduce(
@@ -40,6 +50,52 @@ export const TetrisGame = () => {
                 {gameState.isPaused ? "Resume" : "Pause"}
               </Button>
             )}
+          </div>
+
+          {/* Mobile controls */}
+          <div className="grid grid-cols-3 gap-2 mt-2 w-full max-w-xs">
+            <Button
+              onClick={moveLeft}
+              variant="secondary"
+              disabled={!gameState.currentPiece || gameState.gameOver}
+            >
+              ◀︎ left
+            </Button>
+            <Button
+              onClick={rotate}
+              variant="secondary"
+              disabled={!gameState.currentPiece || gameState.gameOver}
+            >
+              ⟳ rotate
+            </Button>
+            <Button
+              onClick={moveRight}
+              variant="secondary"
+              disabled={!gameState.currentPiece || gameState.gameOver}
+            >
+              ▶︎ right
+            </Button>
+            <Button
+              onClick={hardDrop}
+              variant="secondary"
+              disabled={!gameState.currentPiece || gameState.gameOver}
+            >
+              ⤓ Drop
+            </Button>
+            <Button
+              onClick={moveDown}
+              variant="secondary"
+              disabled={!gameState.currentPiece || gameState.gameOver}
+            >
+              ▼ soft drop
+            </Button>
+            <Button
+              onClick={togglePause}
+              variant="secondary"
+              disabled={!gameState.currentPiece || gameState.gameOver}
+            >
+              {gameState.isPaused ? "Resume" : "Pause"}
+            </Button>
           </div>
 
           {stravaLoading && (

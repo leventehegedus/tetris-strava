@@ -1,7 +1,7 @@
 import type { Tetromino } from "@/types/tetris";
 
-export const BOARD_WIDTH = 20;
-export const BOARD_HEIGHT = 30;
+export const BOARD_WIDTH = 12;
+export const BOARD_HEIGHT = 20;
 
 // Choose compact dimensions (w,h) with w,h <= MAX_DIM and area >= cells
 const MAX_DIM = 10;
