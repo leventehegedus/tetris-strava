@@ -1,13 +1,6 @@
 import { useEffect, useState } from "react";
 import { useStrava } from "@/hooks/useStrava";
 
-const ENV_CLIENT_ID = import.meta.env.VITE_STRAVA_CLIENT_ID as
-  | string
-  | undefined;
-const ENV_CLIENT_SECRET = import.meta.env.VITE_STRAVA_CLIENT_SECRET as
-  | string
-  | undefined;
-
 export const StravaCallback = () => {
   const { exchangeToken } = useStrava();
   const [status, setStatus] = useState<"loading" | "success" | "error">(
@@ -33,24 +26,10 @@ export const StravaCallback = () => {
         return;
       }
 
-      // Prefer localStorage from the Connect button, fallback to env vars
-      const clientId =
-        localStorage.getItem("strava_client_id") ?? ENV_CLIENT_ID ?? undefined;
-      const clientSecret =
-        localStorage.getItem("strava_client_secret") ??
-        ENV_CLIENT_SECRET ??
-        undefined;
-
-      if (!clientId || !clientSecret) {
-        setStatus("error");
-        setMessage(
-          "Missing Strava credentials. Ensure VITE_STRAVA_CLIENT_ID and VITE_STRAVA_CLIENT_SECRET are set, or reconnect from the home page."
-        );
-        return;
-      }
+      // With secure backend, no need to pass client credentials from frontend
 
       try {
-        await exchangeToken(code, clientId, clientSecret);
+        await exchangeToken(code);
         setStatus("success");
         setMessage("Successfully connected to Strava! Redirecting...");
         setTimeout(() => {

@@ -1,4 +1,5 @@
 import type { StravaActivity } from "@/types/strava";
+import { StatItem } from "./StatItem";
 
 interface ScoreBoardProps {
   score: number;
@@ -70,11 +71,18 @@ export const ScoreBoard = ({
               </div>
             </div>
             <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
-              <span>Distance: {formatKm(currentRun.distance)}</span>
-              <span>
-                Pace: {formatPace(currentRun.moving_time, currentRun.distance)}
-              </span>
-              <span>Elapsed: {formatElapsed(currentRun.elapsed_time)}</span>
+              <StatItem
+                label="Distance"
+                value={formatKm(currentRun.distance)}
+              />
+              <StatItem
+                label="Pace"
+                value={formatPace(currentRun.moving_time, currentRun.distance)}
+              />
+              <StatItem
+                label="Elapsed"
+                value={formatElapsed(currentRun.elapsed_time)}
+              />
             </div>
           </div>
         )}

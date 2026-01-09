@@ -44,26 +44,17 @@ export const useStrava = () => {
     window.location.href = authUrl;
   };
 
-  const exchangeToken = async (
-    code: string,
-    clientId: string,
-    clientSecret: string
-  ) => {
+  const exchangeToken = async (code: string) => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await fetch("https://www.strava.com/oauth/token", {
+      const response = await fetch("/api/strava/exchange", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          client_id: clientId,
-          client_secret: clientSecret,
-          code,
-          grant_type: "authorization_code",
-        }),
+        body: JSON.stringify({ code }),
       });
 
       if (!response.ok) {
