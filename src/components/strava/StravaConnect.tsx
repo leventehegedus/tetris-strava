@@ -1,24 +1,39 @@
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useStrava } from "@/hooks/useStrava";
 
-const CLIENT_ID = import.meta.env.VITE_STRAVA_CLIENT_ID as string | undefined;
-const REDIRECT_URI = import.meta.env.VITE_STRAVA_REDIRECT_URI as
-  | string
-  | undefined;
-
 export const StravaConnect = () => {
   const { isAuthenticated, initiateAuth, clearTokens } = useStrava();
+  const [clientId, setClientId] = useState<string | null>(null);
+  const [redirectUriOverride, setRedirectUriOverride] = useState<string | null>(
+    null
+  );
+  const [loadingConfig, setLoadingConfig] = useState(true);
+
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const res = await fetch("/api/strava/config");
+        const data = await res.json();
+        setClientId(data?.client_id ?? null);
+        setRedirectUriOverride(data?.redirect_uri ?? null);
+      } catch {
+        setClientId(null);
+        setRedirectUriOverride(null);
+      } finally {
+        setLoadingConfig(false);
+      }
+    };
+    loadConfig();
+  }, []);
 
   const handleConnect = () => {
-    if (!CLIENT_ID) {
-      alert("Missing Strava client ID. Set VITE_STRAVA_CLIENT_ID.");
+    if (!clientId) {
+      alert("Missing Strava client ID. Configure STRAVA_CLIENT_ID in Vercel.");
       return;
     }
-
-    const clientId = CLIENT_ID.toString();
-
     const redirectUri =
-      REDIRECT_URI ?? `${window.location.origin}/strava/callback`;
+      redirectUriOverride ?? `${window.location.origin}/strava/callback`;
     initiateAuth(clientId, redirectUri);
   };
 
@@ -52,10 +67,15 @@ export const StravaConnect = () => {
     <div className="bg-card border border-border rounded-lg p-4">
       <div className="flex items-center justify-between">
         <span className="text-muted-foreground">Not connected to Strava</span>
-        <Button onClick={handleConnect} size="sm">
+        <Button onClick={handleConnect} size="sm" disabled={loadingConfig}>
           Connect to Strava
         </Button>
       </div>
+      {!loadingConfig && !clientId && (
+        <p className="mt-2 text-xs text-destructive">
+          STRAVA_CLIENT_ID is not configured on the server.
+        </p>
+      )}
     </div>
   );
 };
