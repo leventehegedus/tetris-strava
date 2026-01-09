@@ -1,20 +1,31 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import type { GameState, Position } from "@/types/tetris";
+import type { StravaActivity } from "@/types/strava";
 import {
   createEmptyBoard,
   getRandomTetromino,
+  getTetrominoBySize,
   isValidMove,
   mergePieceToBoard,
   clearLines,
   rotatePiece,
   calculateScore,
 } from "@/utils/tetrisLogic";
+import { useStrava } from "@/hooks/useStrava";
 
 const INITIAL_POSITION: Position = { x: 3, y: 0 };
 const INITIAL_DROP_TIME = 1000;
 const DROP_TIME_DECREASE = 50;
 
 export const useTetris = () => {
+  const { activities } = useStrava();
+  const [sequence, setSequence] = useState<number[]>([]);
+  const [activitySequence, setActivitySequence] = useState<StravaActivity[]>(
+    []
+  );
+  const [currentRun, setCurrentRun] = useState<StravaActivity | null>(null);
+  const seqIndexRef = useRef(0);
+
   const [gameState, setGameState] = useState<GameState>({
     board: createEmptyBoard(),
     currentPiece: null,
@@ -28,8 +39,51 @@ export const useTetris = () => {
 
   const dropTimeRef = useRef(INITIAL_DROP_TIME);
 
+  // Build size sequence from Strava run activities (oldest first)
+  useEffect(() => {
+    if (!activities || activities.length === 0) {
+      setSequence([]);
+      setActivitySequence([]);
+      setCurrentRun(null);
+      seqIndexRef.current = 0;
+      return;
+    }
+
+    const runTypes = new Set(["Run", "TrailRun", "VirtualRun"]);
+    const runsSorted = activities
+      .filter((a) => runTypes.has(a.sport_type))
+      .sort(
+        (a, b) =>
+          new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
+      );
+
+    const sizes = runsSorted.map((a) => {
+      const km = a.distance / 1000;
+      const size = Math.max(1, Math.floor(km));
+      return Math.min(42, size);
+    });
+
+    setSequence(sizes);
+    setActivitySequence(runsSorted);
+    seqIndexRef.current = 0;
+  }, [activities]);
+
+  const getNextFromSequence = useCallback(() => {
+    if (sequence.length === 0 || activitySequence.length === 0) {
+      return {
+        piece: getRandomTetromino(),
+        activity: null as StravaActivity | null,
+      };
+    }
+    const idx = seqIndexRef.current % sequence.length;
+    const n = sequence[idx];
+    const activity = activitySequence[idx] ?? null;
+    seqIndexRef.current = (seqIndexRef.current + 1) % sequence.length;
+    return { piece: getTetrominoBySize(n), activity };
+  }, [sequence, activitySequence]);
+
   const startGame = useCallback(() => {
-    const newPiece = getRandomTetromino();
+    const { piece: newPiece, activity } = getNextFromSequence();
     setGameState({
       board: createEmptyBoard(),
       currentPiece: newPiece,
@@ -40,30 +94,32 @@ export const useTetris = () => {
       gameOver: false,
       isPaused: false,
     });
+    setCurrentRun(activity);
     dropTimeRef.current = INITIAL_DROP_TIME;
-  }, []);
+  }, [getNextFromSequence]);
 
   const togglePause = useCallback(() => {
-    setGameState(prev => ({
+    setGameState((prev) => ({
       ...prev,
       isPaused: !prev.isPaused,
     }));
   }, []);
 
   const spawnNewPiece = useCallback(() => {
-    const newPiece = getRandomTetromino();
+    const { piece: newPiece, activity } = getNextFromSequence();
     const newPosition = INITIAL_POSITION;
 
-    setGameState(prev => {
+    setGameState((prev) => {
       if (!isValidMove(prev.board, newPiece, newPosition)) {
         return { ...prev, gameOver: true, currentPiece: null };
       }
       return { ...prev, currentPiece: newPiece, position: newPosition };
     });
-  }, []);
+    setCurrentRun(activity);
+  }, [getNextFromSequence]);
 
   const lockPiece = useCallback(() => {
-    setGameState(prev => {
+    setGameState((prev) => {
       if (!prev.currentPiece) return prev;
 
       const mergedBoard = mergePieceToBoard(
@@ -96,7 +152,7 @@ export const useTetris = () => {
   }, [spawnNewPiece]);
 
   const moveDown = useCallback(() => {
-    setGameState(prev => {
+    setGameState((prev) => {
       if (!prev.currentPiece || prev.gameOver || prev.isPaused) return prev;
 
       const newPosition = { ...prev.position, y: prev.position.y + 1 };
@@ -110,7 +166,7 @@ export const useTetris = () => {
   }, []);
 
   const moveLeft = useCallback(() => {
-    setGameState(prev => {
+    setGameState((prev) => {
       if (!prev.currentPiece || prev.gameOver || prev.isPaused) return prev;
 
       const newPosition = { ...prev.position, x: prev.position.x - 1 };
@@ -123,7 +179,7 @@ export const useTetris = () => {
   }, []);
 
   const moveRight = useCallback(() => {
-    setGameState(prev => {
+    setGameState((prev) => {
       if (!prev.currentPiece || prev.gameOver || prev.isPaused) return prev;
 
       const newPosition = { ...prev.position, x: prev.position.x + 1 };
@@ -136,7 +192,7 @@ export const useTetris = () => {
   }, []);
 
   const rotate = useCallback(() => {
-    setGameState(prev => {
+    setGameState((prev) => {
       if (!prev.currentPiece || prev.gameOver || prev.isPaused) return prev;
 
       const rotatedPiece = rotatePiece(prev.currentPiece);
@@ -149,11 +205,16 @@ export const useTetris = () => {
   }, []);
 
   const hardDrop = useCallback(() => {
-    setGameState(prev => {
+    setGameState((prev) => {
       if (!prev.currentPiece || prev.gameOver || prev.isPaused) return prev;
 
       let newPosition = { ...prev.position };
-      while (isValidMove(prev.board, prev.currentPiece, { ...newPosition, y: newPosition.y + 1 })) {
+      while (
+        isValidMove(prev.board, prev.currentPiece, {
+          ...newPosition,
+          y: newPosition.y + 1,
+        })
+      ) {
         newPosition.y++;
       }
 
@@ -164,12 +225,13 @@ export const useTetris = () => {
   }, [lockPiece]);
 
   useEffect(() => {
-    if (gameState.gameOver || gameState.isPaused || !gameState.currentPiece) return;
+    if (gameState.gameOver || gameState.isPaused || !gameState.currentPiece)
+      return;
 
     const interval = setInterval(() => {
       let shouldLock = false;
 
-      setGameState(prev => {
+      setGameState((prev) => {
         if (!prev.currentPiece || prev.gameOver || prev.isPaused) return prev;
 
         const newPosition = { ...prev.position, y: prev.position.y + 1 };
@@ -188,7 +250,12 @@ export const useTetris = () => {
     }, dropTimeRef.current);
 
     return () => clearInterval(interval);
-  }, [gameState.gameOver, gameState.isPaused, gameState.currentPiece, lockPiece]);
+  }, [
+    gameState.gameOver,
+    gameState.isPaused,
+    gameState.currentPiece,
+    lockPiece,
+  ]);
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -225,10 +292,19 @@ export const useTetris = () => {
 
     window.addEventListener("keydown", handleKeyPress);
     return () => window.removeEventListener("keydown", handleKeyPress);
-  }, [moveLeft, moveRight, moveDown, rotate, hardDrop, togglePause, gameState.gameOver]);
+  }, [
+    moveLeft,
+    moveRight,
+    moveDown,
+    rotate,
+    hardDrop,
+    togglePause,
+    gameState.gameOver,
+  ]);
 
   return {
     gameState,
+    currentRun,
     startGame,
     togglePause,
     moveLeft,

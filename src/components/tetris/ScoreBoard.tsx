@@ -1,8 +1,11 @@
+import type { StravaActivity } from "@/types/strava";
+
 interface ScoreBoardProps {
   score: number;
   level: number;
   lines: number;
   pieceSize?: number;
+  currentRun?: StravaActivity;
 }
 
 export const ScoreBoard = ({
@@ -10,7 +13,28 @@ export const ScoreBoard = ({
   level,
   lines,
   pieceSize,
+  currentRun,
 }: ScoreBoardProps) => {
+  const formatKm = (meters: number) => (meters / 1000).toFixed(2) + " km";
+  const formatPace = (movingSeconds: number, meters: number) => {
+    if (!meters || meters <= 0) return "-";
+    const secPerKm = movingSeconds / (meters / 1000);
+    const minutes = Math.floor(secPerKm / 60);
+    const seconds = Math.floor(secPerKm % 60);
+    return `${minutes}:${seconds.toString().padStart(2, "0")} /km`;
+  };
+  const formatElapsed = (seconds: number) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+    if (h > 0)
+      return `${h}:${m.toString().padStart(2, "0")}:${s
+        .toString()
+        .padStart(2, "0")}`;
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  };
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleString();
   return (
     <div className="bg-card border border-border rounded-lg p-4 space-y-4">
       <h2 className="text-xl font-bold text-center text-foreground">Stats</h2>
@@ -33,6 +57,27 @@ export const ScoreBoard = ({
             {pieceSize ?? "-"}
           </span>
         </div>
+        {currentRun && (
+          <div className="border border-border rounded-md p-3 mt-2">
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <h4 className="font-medium text-foreground">
+                  {currentRun.name}
+                </h4>
+                <p className="text-xs text-muted-foreground">
+                  {formatDate(currentRun.start_date_local)}
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
+              <span>Distance: {formatKm(currentRun.distance)}</span>
+              <span>
+                Pace: {formatPace(currentRun.moving_time, currentRun.distance)}
+              </span>
+              <span>Elapsed: {formatElapsed(currentRun.elapsed_time)}</span>
+            </div>
+          </div>
+        )}
       </div>
       <div className="text-xs text-muted-foreground border-t border-border pt-4">
         <p className="mb-2 font-semibold">Controls:</p>

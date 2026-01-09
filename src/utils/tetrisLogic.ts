@@ -1,5 +1,10 @@
 import type { Board, Tetromino, Position } from "@/types/tetris";
-import { BOARD_WIDTH, BOARD_HEIGHT, TETROMINOES, TETROMINO_KEYS } from "@/constants/tetris";
+import {
+  BOARD_WIDTH,
+  BOARD_HEIGHT,
+  TETROMINOES,
+  TETROMINO_KEYS,
+} from "@/constants/tetris";
 
 export const createEmptyBoard = (): Board => {
   return Array.from({ length: BOARD_HEIGHT }, () =>
@@ -8,8 +13,16 @@ export const createEmptyBoard = (): Board => {
 };
 
 export const getRandomTetromino = (): Tetromino => {
-  const randomKey = TETROMINO_KEYS[Math.floor(Math.random() * TETROMINO_KEYS.length)];
+  const randomKey =
+    TETROMINO_KEYS[Math.floor(Math.random() * TETROMINO_KEYS.length)];
   return TETROMINOES[randomKey];
+};
+
+export const getTetrominoBySize = (size: number): Tetromino => {
+  const n = Math.max(1, Math.min(42, Math.floor(size)));
+  const key = `P${n}`;
+  if (key in TETROMINOES) return TETROMINOES[key];
+  return getRandomTetromino();
 };
 
 export const isValidMove = (
@@ -47,7 +60,7 @@ export const mergePieceToBoard = (
   piece: Tetromino,
   position: Position
 ): Board => {
-  const newBoard = board.map(row => row.map(cell => ({ ...cell })));
+  const newBoard = board.map((row) => row.map((cell) => ({ ...cell })));
   const { shape, color } = piece;
   const { x, y } = position;
 
@@ -56,7 +69,12 @@ export const mergePieceToBoard = (
       if (shape[row][col]) {
         const boardRow = y + row;
         const boardCol = x + col;
-        if (boardRow >= 0 && boardRow < BOARD_HEIGHT && boardCol >= 0 && boardCol < BOARD_WIDTH) {
+        if (
+          boardRow >= 0 &&
+          boardRow < BOARD_HEIGHT &&
+          boardCol >= 0 &&
+          boardCol < BOARD_WIDTH
+        ) {
           newBoard[boardRow][boardCol] = { value: 1, color };
         }
       }
@@ -66,10 +84,12 @@ export const mergePieceToBoard = (
   return newBoard;
 };
 
-export const clearLines = (board: Board): { newBoard: Board; linesCleared: number } => {
+export const clearLines = (
+  board: Board
+): { newBoard: Board; linesCleared: number } => {
   let linesCleared = 0;
-  const newBoard = board.filter(row => {
-    if (row.every(cell => cell.value !== 0)) {
+  const newBoard = board.filter((row) => {
+    if (row.every((cell) => cell.value !== 0)) {
       linesCleared++;
       return false;
     }
@@ -86,7 +106,7 @@ export const clearLines = (board: Board): { newBoard: Board; linesCleared: numbe
 export const rotatePiece = (piece: Tetromino): Tetromino => {
   const { shape, color } = piece;
   const rotated = shape[0].map((_, index) =>
-    shape.map(row => row[index]).reverse()
+    shape.map((row) => row[index]).reverse()
   );
   return { shape: rotated, color };
 };

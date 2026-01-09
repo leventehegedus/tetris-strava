@@ -2,9 +2,11 @@ import { Board } from "./Board";
 import { ScoreBoard } from "./ScoreBoard";
 import { Button } from "@/components/ui/button";
 import { useTetris } from "@/hooks/useTetris";
+import { useStrava } from "@/hooks/useStrava";
 
 export const TetrisGame = () => {
-  const { gameState, startGame, togglePause } = useTetris();
+  const { gameState, currentRun, startGame, togglePause } = useTetris();
+  const { loading: stravaLoading } = useStrava();
   const pieceSize = gameState.currentPiece
     ? gameState.currentPiece.shape.reduce(
         (acc, row) => acc + row.reduce((s, cell) => s + (cell ? 1 : 0), 0),
@@ -26,7 +28,7 @@ export const TetrisGame = () => {
 
           <div className="flex gap-2">
             {!gameState.currentPiece || gameState.gameOver ? (
-              <Button onClick={startGame} size="lg">
+              <Button onClick={startGame} size="lg" disabled={stravaLoading}>
                 {gameState.gameOver ? "New Game" : "Start Game"}
               </Button>
             ) : (
@@ -35,6 +37,12 @@ export const TetrisGame = () => {
               </Button>
             )}
           </div>
+
+          {stravaLoading && (
+            <div className="text-sm text-muted-foreground">
+              Loading Strava data…
+            </div>
+          )}
 
           {gameState.gameOver && (
             <div className="text-2xl font-bold text-destructive">
@@ -52,6 +60,7 @@ export const TetrisGame = () => {
           level={gameState.level}
           lines={gameState.lines}
           pieceSize={pieceSize}
+          currentRun={currentRun ?? undefined}
         />
       </div>
     </div>

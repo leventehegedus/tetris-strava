@@ -230,8 +230,8 @@ const colorForSize = (n: number): string => {
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 };
 
-// Add sizes P11..P42 with max 8x8 footprint
-for (let n = 11; n <= 42; n++) {
+// Add sizes P1..P42 with compact footprint
+for (let n = 1; n <= 42; n++) {
   const key = `P${n}`;
   if (!(key in TETROMINOES)) {
     TETROMINOES[key] = {
